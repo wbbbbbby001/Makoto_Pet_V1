@@ -1,0 +1,43 @@
+menu "Makoto Pet 配置"
+
+config MAKOTO_WIFI_SSID
+    string "Wi-Fi 名称 (SSID)"
+    default ""
+    help
+        留空则开机后进入配网热点模式（热点名 Makoto-Pet-xxxx）。
+        配网页面地址 http://192.168.4.1
+
+config MAKOTO_WIFI_PASSWORD
+    string "Wi-Fi 密码"
+    default ""
+
+config MAKOTO_SERVER_URI
+    string "语音中枢 WebSocket 地址"
+    default "ws://192.168.1.100:8765/ws/device"
+    help
+        例如 ws://192.168.1.100:8765/ws/device，IP 改成你电脑的局域网 IP。
+
+config MAKOTO_VOLUME
+    int "开机音量 (0-100)"
+    range 0 100
+    default 70
+
+config MAKOTO_BOOT_PTT
+    bool "BOOT 键按住说话"
+    default y
+
+config MAKOTO_BOOT_LONGPRESS_MS
+    int "BOOT 长按唤醒 AI 的阈值 (毫秒)"
+    range 500 10000
+    default 3000
+    help
+        BOOT 键需要按住这么久才启动语音对话；短按不启动。
+        在相机界面里，短按（小于这个值）会拍照，长按仍然进入语音对话。
+
+config MAKOTO_ENABLE_WAKE_WORD
+    bool "启用本地唤醒词 (esp-sr)"
+    default n
+    help
+        需要 esp-sr 与 model 分区，体积较大。默认关闭，用 BOOT 键/屏幕按钮说话。
+
+endmenu

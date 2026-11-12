@@ -1,0 +1,45 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# ---------- 本地配置 / 生成数据（含 API Key、绝对路径、个人知识库） ----------
+server/config.yaml
+server/data/voices.json
+server/data/knowledge.json
+server/data/pinyin_dict.pkl
+server/data/*.wav
+server/data/*.pcm
+server/data/kb_uploads/*
+!server/data/kb_uploads/.gitkeep
+server/data/refs/*
+!server/data/refs/.gitkeep
+
+# ---------- 曲库 / 缓存（版权歌曲不入库） ----------
+server/music/*
+!server/music/.gitkeep
+server/data/music/*
+!server/data/music/.gitkeep
+
+# ---------- 音色权重（通过 GitHub Release 分发） ----------
+voice_models/
+makoto/
+*.ckpt
+*.pth
+
+# ---------- ESP-IDF 构建产物 / 组件缓存 ----------
+firmware/build/
+firmware/build_out/
+firmware/managed_components/
+firmware/sdkconfig.old
+
+# ---------- Release 打包产物 ----------
+release/
+
+# ---------- 其他 ----------
+.DS_Store
+Thumbs.db
+*.log

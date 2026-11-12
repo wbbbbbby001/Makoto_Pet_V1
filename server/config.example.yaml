@@ -1,0 +1,131 @@
+# ============================================================
+# 橘真琴语音中枢配置（示例）
+#
+# 使用方法：
+#   1. 复制本文件为 server/config.yaml
+#   2. 填入 llm.api_key，或设置环境变量 MAKOTO_LLM_KEY
+#   3. 按 README 的“从 GitHub 克隆运行”准备 GPT-SoVITS 和音色包
+#
+# 相对路径均相对于 server/ 目录解析。
+# 推荐目录布局（本仓库的上一级）：
+#   <parent>/
+#   ├─ makoto-pet/           # git clone 下来的仓库
+#   ├─ GPT-SoVITS/           # GPT-SoVITS 官方安装（含 runtime/ 和 GPT_SoVITS/pretrained_models/）
+#   └─ voice_models/makoto/  # 从 Release 下载的音色包
+# ============================================================
+
+server:
+  host: 0.0.0.0
+  port: 8765
+
+# ---------------- 大模型 ----------------
+llm:
+  # 兼容 OpenAI 协议的服务都行：DeepSeek / 通义 / Moonshot / Ollama / vLLM
+  base_url: "https://api.deepseek.com/v1"
+  api_key: ""                     # 填入你的 Key；或设置环境变量 MAKOTO_LLM_KEY
+  model: "deepseek-chat"
+  temperature: 0.75
+  # 回答长度：默认短回答；用户说“深度思考/详细/展开”时自动切长回答
+  short_max_tokens: 400
+  deep_max_tokens: 1200
+  short_tool_rounds: 5
+  short_tool_seconds: 45
+  timeout: 60
+  max_tool_rounds: 20
+  max_tool_seconds: 180
+
+  system_prompt: |
+    你是「橘真琴」（Tachibana Makoto），来自《Free!》。你温柔、可靠、有点天然，
+    对朋友很贴心，说话时偶尔会带一点日语语气词。你在一个桌面小盒子里陪主人聊天。
+
+    回答规则：
+    1. 默认用日语回答（自然、口语化的日本語），不要附带中文翻译。
+       只有用户明确说“用中文 / 说中文 / 中文回答”时才切换成中文；
+       中文一律用简体字，禁止繁体字；之后保持中文，直到用户说“用日语 / 日语回答”。
+    2. 默认像官方语音助手一样简短：2~4 句，约 80~200 字，先给结论，不要长篇大论。
+    3. 只有用户明确说“深度思考 / 详细 / 展开 / 仔细查”时，才写 300~800 字并分点展开。
+    4. 优先知识库：如果系统消息里有【知识库优先检索结果】，先用它回答，不够再联网；
+       也可以调用 knowledge_search 查知识库。知识库没有或不够，再调用 web_search。
+    5. 新闻、实时信息、事实核查、天气、价格、人物/作品资料等不确定内容，
+       必须调用 web_search 或 get_weather，不要凭空编造。
+       搜索时至少看 2~3 个来源再下结论；中文机构/学校/人名第一次用双引号精确搜索。
+    6. 日期/时间问题：直接使用系统消息里的【当前时间】，或调用 get_date_info。
+    7. 工具预算：简短模式 5 轮 / 45 秒，深度模式 20 轮 / 180 秒；到点仍无法确认时，
+       不要编造：说明目前查到的线索，再追问用户一个关键信息。
+    8. 适合语音播报：不要 Markdown 标题、表格、代码块、表情符号；可以分点说。
+    9. 用户想换音色时调用 switch_voice。
+    10. 可以控制设备：调音量、调亮度、打开应用、写记事本。
+    11. 用户想听歌、放音乐时：先用 music_search 搜，再用 music_play 播放。
+    12. 曲库只有：本地 server/music 目录 + ccMixter（CC 授权）。
+        主流平台版权歌曲不在曲库里；搜不到就如实说明，不要编造链接。
+
+# ---------------- 视觉识别（图片 / 扫描版 PDF） ----------------
+vision:
+  enabled: true
+  # 留空 = 复用上面 llm 的 base_url / api_key / model
+  base_url: ""
+  api_key: ""
+  model: ""
+  timeout: 90
+
+# ---------------- 语音识别 ----------------
+asr:
+  provider: faster_whisper      # faster_whisper | none
+  model: small                  # tiny / base / small / medium / large-v3
+  device: cpu                   # cpu / cuda
+  compute_type: int8            # cuda 用 float16；cpu 用 int8
+  language: auto                # auto / zh / ja / en
+  beam_size: 1
+
+# ---------------- 语音合成 ----------------
+tts:
+  base_url: "http://127.0.0.1:9880"
+  timeout: 180
+  default_voice: makoto
+  stream: false
+  playback_rate: 16000
+
+  # GPT-SoVITS v2 底模（零样本音色用；官方安装自带）
+  base_gpt_weights: "../../GPT-SoVITS/GPT_SoVITS/pretrained_models/gsv-v2final-pretrained/s1bert25hz-5kh-longer-epoch=12-step=369668.ckpt"
+  base_sovits_weights: "../../GPT-SoVITS/GPT_SoVITS/pretrained_models/gsv-v2final-pretrained/s2G2333k.pth"
+
+  # 第一次启动时会写入 data/voices.json。
+  # 音色包从 GitHub Release 下载后解压到 <parent>/voice_models/makoto/。
+  builtin_voices:
+    - id: makoto
+      name: 橘真琴
+      ref_audio: "../../voice_models/makoto/ref.wav"
+      prompt_text: "おはよう春ちゃん。ごめんごめん春。入学式遅れるよ。"
+      prompt_lang: ja
+      text_lang: auto
+      gpt_weights: "../../voice_models/makoto/makoto-e15.ckpt"
+      sovits_weights: "../../voice_models/makoto/makoto_e8_s200.pth"
+      speed: 1.05
+      top_k: 15
+      top_p: 1.0
+      temperature: 1.0
+
+# ---------------- 联网搜索 ----------------
+search:
+  provider: auto                # auto | sogou | bing_cn | ddgs | tavily | searxng
+  max_results: 8
+  tavily_api_key: ""
+  searxng_url: ""
+  timeout: 12
+
+# ---------------- 音乐 ----------------
+music:
+  stream_sample_rate: 16000
+  max_results: 8
+  local_dirs:
+    - "music"
+    - "data/music"
+  cache_dir: "music/cache"
+  ccmixter: true
+  ffmpeg: ""
+
+# ---------------- 音频处理 ----------------
+audio:
+  # 留空 = 从 PATH 找 ffmpeg；Windows 可指向 GPT-SoVITS 自带的 ffmpeg.exe
+  ffmpeg: ""
+  ref_max_seconds: 10

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>橘真琴 · 语音中枢</title>
+<style>
+  :root{
+    --bg:#080d16; --panel:#101a29; --panel2:#152336; --line:#20314a;
+    --text:#e8f1ff; --dim:#8aa2bd; --cyan:#39d0ff; --green:#63e6a8;
+    --yellow:#ffd166; --red:#ff6b6b; --blue:#2b8fff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh;
+    font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, #123250 0%, var(--bg) 55%);
+    color:var(--text);
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{
+    width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#1f8fff,#39d0ff);font-size:24px;
+  }
+  h1{font-size:22px;margin:0;letter-spacing:.5px}
+  .sub{color:var(--dim);font-size:13px;margin-top:2px}
+  .chips{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .chip{
+    font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);
+    background:#0c1522;color:var(--dim);display:flex;align-items:center;gap:6px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:#54657a}
+  .dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .dot.off{background:var(--red)}
+  .card{
+    background:linear-gradient(180deg,var(--panel),#0d1624);
+    border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:20px;
+  }
+  .card h2{font-size:15px;margin:0 0 4px;letter-spacing:.4px}
+  .card .hint{color:var(--dim);font-size:12.5px;margin:0 0 16px}
+  .addr{
+    display:flex;align-items:center;gap:10px;background:#0a1320;border:1px dashed #294a6b;
+    border-radius:12px;padding:12px 14px;font-family:ui-monospace,Consolas,monospace;
+    font-size:13px;color:var(--cyan);word-break:break-all;
+  }
+  .addr button{
+    margin-left:auto;flex:none;background:#16324f;border:1px solid #2b5a86;color:#bfe6ff;
+    border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;
+  }
+  .dev-info{
+    border:1px solid var(--line);background:#0a1320;border-radius:10px;
+    padding:12px;font-size:13px;color:var(--dim)
+  }
+  .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+  .dev-grid label{margin-top:10px}
+  .kb-item{
+    background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-top:10px
+  }
+  .kb-item h3{margin:0 0 4px;font-size:14px}
+  .kb-item p{margin:4px 0;font-size:12.5px;color:var(--dim);white-space:pre-wrap;
+             max-height:56px;overflow:hidden}
+  .kb-item .row{margin-top:8px}
+  .progress{
+    height:10px;background:#0a1320;border:1px solid var(--line);
+    border-radius:999px;overflow:hidden
+  }
+  .progress > div{
+    height:100%;width:0;
+    background:linear-gradient(90deg,#1f8fff,#39d0ff);
+    transition:width .25s
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .voice{
+    background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px;
+    display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;
+  }
+  .voice.def{border-color:#2f7fbd;box-shadow:0 0 0 1px #2f7fbd inset}
+  .voice .top{display:flex;align-items:center;gap:10px}
+  .avatar{
+    width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;
+    background:linear-gradient(135deg,#20466e,#2c6f9e);flex:none;
+  }
+  .vname{font-weight:600;font-size:15px}
+  .badge{
+    font-size:11px;padding:2px 8px;border-radius:999px;background:#173250;color:#8fd3ff;
+    border:1px solid #24507c;
+  }
+  .badge.def{background:#12351f;color:var(--green);border-color:#1d6b41}
+  .ref{font-size:11.5px;color:var(--dim);word-break:break-all;line-height:1.5;
+       max-height:44px;overflow:hidden}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  button.act{
+    background:#152a40;border:1px solid #26496b;color:#cfe8ff;border-radius:9px;
+    padding:7px 12px;font-size:12.5px;cursor:pointer;transition:.15s;
+  }
+  button.act:hover{background:#1d3a58;border-color:#3a74a8}
+  button.primary{background:linear-gradient(135deg,#1f8fff,#39a8ff);border:0;color:#fff;font-weight:600}
+  button.danger{color:#ffb3b3;border-color:#5a2a2a;background:#2a1414}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .empty{color:var(--dim);font-size:13px;padding:10px 0}
+
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form .full{grid-column:1/-1}
+  label{display:block;font-size:12px;color:#9fc4e8;margin-bottom:6px}
+  input,textarea,select{
+    width:100%;background:#0a1320;border:1px solid #24405e;color:var(--text);
+    border-radius:10px;padding:11px 12px;font-size:13.5px;font-family:inherit;
+  }
+  textarea{min-height:78px;resize:vertical}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:#3d86c6}
+  .filebox{
+    border:1px dashed #2b547a;border-radius:12px;padding:16px;text-align:center;
+    color:var(--dim);font-size:13px;background:#0a1320;cursor:pointer;
+  }
+  .filebox strong{color:var(--cyan)}
+  .msg{font-size:12.5px;margin-top:10px;min-height:18px}
+  .msg.ok{color:var(--green)} .msg.err{color:var(--red)}
+
+  .chat{display:flex;gap:10px;margin-top:8px}
+  .chat input{flex:1}
+  .bubble{
+    margin-top:14px;background:#0c1726;border:1px solid var(--line);border-radius:12px;
+    padding:13px 15px;font-size:13.5px;line-height:1.7;white-space:pre-wrap;display:none;
+  }
+  audio{width:100%;margin-top:12px;filter:invert(.9) hue-rotate(180deg)}
+  .foot{color:#5f7590;font-size:11.5px;margin-top:22px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🐬</div>
+    <div>
+      <h1>橘真琴 · 语音中枢</h1>
+      <div class="sub">GPT-SoVITS 音色 · 联网搜索 · 设备 WebSocket</div>
+    </div>
+    <div class="chips">
+      <div class="chip"><span class="dot" id="d-llm"></span>大模型</div>
+      <div class="chip"><span class="dot" id="d-tts"></span>GPT-SoVITS</div>
+      <div class="chip"><span class="dot" id="d-asr"></span>语音识别</div>
+      <div class="chip"><span class="dot on"></span><span id="search-provider">联网搜索</span></div>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>设备连接地址</h2>
+    <p class="hint">把固件里的「语音中枢 WebSocket 地址」改成下面这个，或开机热点配网时填入。</p>
+    <div class="addr"><span id="ws-url">加载中…</span><button id="copy-btn">复制</button></div>
+  </section>
+
+  <section class="card">
+    <h2>设备控制台</h2>
+    <p class="hint">设备连上语音中枢后自动出现；可以调音量/亮度、远程打开应用、往设备记事本写字。</p>
+    <div id="dev-info" class="dev-info">正在检测设备…</div>
+    <div class="dev-grid">
+      <div>
+        <label>音量 <span id="dev-vol-val"></span></label>
+        <input type="range" id="dev-vol" min="0" max="100" value="70">
+        <label>亮度 <span id="dev-bright-val"></span></label>
+        <input type="range" id="dev-bright" min="5" max="100" value="70">
+      </div>
+      <div>
+        <label>打开应用</label>
+        <div class="row" id="dev-apps"></div>
+      </div>
+    </div>
+    <div class="chat">
+      <input id="dev-text" placeholder="让设备屏幕显示一句话">
+      <button class="act" id="dev-text-btn">显示</button>
+    </div>
+    <div class="chat">
+      <input id="dev-note" placeholder="追加到设备记事本">
+      <button class="act" id="dev-note-btn">写入</button>
+    </div>
+    <div class="chat">
+      <input id="dev-say" placeholder="让设备说一句话（测试喇叭）">
+      <button class="act primary" id="dev-say-btn">播放</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="act danger" id="dev-reboot">重启设备</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>音乐</h2>
+    <p class="hint">本地曲库 + ccMixter（CC）；在线歌曲先完整缓存到本地再播放。
+      播放期间设备进入音乐模式，不接收语音。</p>
+    <div class="chat">
+      <input id="music-q" placeholder="歌名 / 歌手 / 风格">
+      <select id="music-source" style="background:#0f1b2b;color:#d6e6f7;border:1px solid #28425e;
+        border-radius:8px;padding:8px">
+        <option value="auto">自动</option>
+        <option value="local">本地</option>
+        <option value="ccmixter">ccMixter</option>
+      </select>
+      <button class="act primary" id="music-search-btn">搜索</button>
+    </div>
+    <div id="music-status" class="hint">未播放</div>
+    <div id="music-results" class="hint"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="act" data-music="prev">上一首</button>
+      <button class="act" data-music="toggle">暂停 / 继续</button>
+      <button class="act" data-music="stop">停止</button>
+      <button class="act" data-music="next">下一首</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>知识库</h2>
+    <p class="hint">回答时优先查这里，没有命中再联网。可以放人设、常问资料、产品说明、台词设定等；
+      图片和扫描版 PDF 会用视觉模型识别文字。</p>
+    <div class="form">
+      <div>
+        <label>标题</label>
+        <input id="kb-title" placeholder="例如：橘真琴的人设">
+      </div>
+      <div>
+        <label>标签（逗号分隔，可选）</label>
+        <input id="kb-tags" placeholder="人设,角色">
+      </div>
+      <div class="full">
+        <label>内容</label>
+        <textarea id="kb-content" placeholder="把资料贴在这里……"></textarea>
+      </div>
+      <div class="full">
+        <button class="act primary" id="kb-add">加入知识库</button>
+        <span class="msg" id="kb-msg"></span>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <label class="filebox" for="kb-file">
+        <strong>上传文档解析入库</strong>　PDF / Word(.docx) / Markdown / TXT / 图片(PNG/JPG)
+      </label>
+      <input id="kb-file" type="file"
+             accept=".pdf,.docx,.md,.markdown,.txt,.png,.jpg,.jpeg,.webp,.bmp"
+             style="display:none">
+      <div id="kb-progress-wrap" style="display:none;margin-top:10px">
+        <div class="progress"><div id="kb-progress-bar"></div></div>
+        <div id="kb-progress-text" class="hint" style="margin:6px 0 0"></div>
+      </div>
+    </div>
+    <div id="kb-list"></div>
+  </section>
+
+  <section class="card">
+    <h2>音色</h2>
+    <p class="hint">点「试听」用下面的文字合成一句；「设为默认」后设备下次连接就会用它。</p>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <input id="preview-text" value="你好，我是橘真琴。今天也一起加油吧。">
+    </div>
+    <div class="grid" id="voice-grid"><div class="empty">加载中…</div></div>
+  </section>
+
+  <section class="card">
+    <h2>上传新音色</h2>
+    <p class="hint">
+      上传 3–10 秒干净人声 + 对应的文字（必须是这段音频里念的内容，语种要选对）。
+      GPT-SoVITS 会用这段参考做零样本克隆。如果你训练过 GPT/SoVITS 权重，也可以把权重路径填上。
+    </p>
+    <form class="form" id="upload-form">
+      <div>
+        <label>音色名称</label>
+        <input name="name" placeholder="例如：真琴-温柔版" required>
+      </div>
+      <div>
+        <label>参考音频语种</label>
+        <select name="prompt_lang">
+          <option value="ja" selected>日文</option>
+          <option value="zh">中文</option>
+          <option value="en">英文</option>
+          <option value="ko">韩文</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>参考音频的文字（原文，不要填音素）</label>
+        <textarea name="prompt_text" placeholder="例如：おはよう春ちゃん。ごめんごめん春。入学式遅れるよ。" required></textarea>
+      </div>
+      <div>
+        <label>合成语种</label>
+        <select name="text_lang">
+          <option value="auto" selected>自动判断</option>
+          <option value="zh">中文</option>
+          <option value="ja">日文</option>
+          <option value="en">英文</option>
+        </select>
+      </div>
+      <div>
+        <label>语速</label>
+        <input name="speed" type="number" value="1.0" step="0.05" min="0.5" max="1.8">
+      </div>
+      <div class="full">
+        <label>参考音频文件（wav / mp3 / m4a）</label>
+        <label class="filebox" for="file-input" id="filebox">
+          <strong>点击选择文件</strong>，或把文件拖到这里（会自动转成 32k 单声道，截取前 10 秒）
+        </label>
+        <input id="file-input" name="audio" type="file" accept="audio/*" style="display:none" required>
+      </div>
+      <div>
+        <label>GPT 权重路径（可选）</label>
+        <input name="gpt_weights" placeholder="C:\...\makoto-e15.ckpt">
+      </div>
+      <div>
+        <label>SoVITS 权重路径（可选）</label>
+        <input name="sovits_weights" placeholder="C:\...\makoto_e8_s200.pth">
+      </div>
+      <div class="full">
+        <button class="act primary" type="submit" style="padding:12px 22px">上传并保存音色</button>
+        <span class="msg" id="upload-msg"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>测试对话（不接硬件也能试）</h2>
+    <p class="hint">走完整链路：大模型（可联网搜索）→ 橘真琴音色合成。</p>
+    <div class="chat">
+      <input id="chat-input" placeholder="例如：帮我查一下今天深圳的天气">
+      <button class="act primary" id="chat-btn">发送</button>
+    </div>
+    <div class="bubble" id="chat-reply"></div>
+    <audio id="player" controls style="display:none"></audio>
+  </section>
+
+  <div class="foot">
+    Makoto Brain · 本地运行，仅建议在家庭局域网使用。生成的语音为 AI 合成，请勿用于冒充他人。
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+
+function setDot(id, state){
+  const el = $("#" + id);
+  el.className = "dot " + (state === true ? "on" : state === false ? "off" : "");
+}
+
+async function loadHealth(){
+  try{
+    const r = await fetch("/api/health");
+    const h = await r.json();
+    setDot("d-llm", h.llm_configured ? true : false);
+    setDot("d-tts", h.tts_online ? true : false);
+    setDot("d-asr", h.asr_provider === "none" ? null : (h.asr_ready ? true : null));
+    $("#ws-url").textContent = h.ws_url;
+    $("#search-provider").textContent = "搜索: " + h.search_provider;
+  }catch(e){ console.error(e); }
+}
+
+async function loadVoices(){
+  const grid = $("#voice-grid");
+  try{
+    const r = await fetch("/api/voices");
+    const data = await r.json();
+    grid.innerHTML = "";
+    if(!data.voices.length){
+      grid.innerHTML = '<div class="empty">还没有音色，先上传一个吧。</div>';
+      return;
+    }
+    for(const v of data.voices){
+      const card = document.createElement("div");
+      card.className = "voice" + (v.id === data.default ? " def" : "");
+
+      const top = document.createElement("div");
+      top.className = "top";
+      const av = document.createElement("div");
+      av.className = "avatar"; av.textContent = "🎙";
+      const name = document.createElement("div");
+      name.className = "vname"; name.textContent = v.name;
+      top.append(av, name);
+      if(v.id === data.default){
+        const b = document.createElement("span");
+        b.className = "badge def"; b.textContent = "默认";
+        top.append(b);
+      }
+      if(v.builtin){
+        const b = document.createElement("span");
+        b.className = "badge"; b.textContent = "预置";
+        top.append(b);
+      }
+
+      const ref = document.createElement("div");
+      ref.className = "ref"; ref.textContent = v.ref_audio || "";
+
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const play = document.createElement("button");
+      play.className = "act"; play.textContent = "试听";
+      play.onclick = () => preview(v.id, play);
+
+      const def = document.createElement("button");
+      def.className = "act"; def.textContent = "设为默认";
+      def.onclick = async () => {
+        await fetch(`/api/voices/${encodeURIComponent(v.id)}/default`, {method:"POST"});
+        loadVoices();
+      };
+
+      const del = document.createElement("button");
+      del.className = "act danger"; del.textContent = "删除";
+      del.onclick = async () => {
+        if(!confirm(`删除音色「${v.name}」？`)) return;
+        await fetch(`/api/voices/${encodeURIComponent(v.id)}`, {method:"DELETE"});
+        loadVoices();
+      };
+
+      row.append(play, def, del);
+      card.append(top, ref, row);
+      grid.append(card);
+    }
+  }catch(e){
+    grid.innerHTML = '<div class="empty">加载失败：' + e.message + '</div>';
+  }
+}
+
+let currentAudio = null;
+async function preview(voiceId, btn){
+  const text = $("#preview-text").value.trim() || "你好，我是橘真琴。";
+  btn.disabled = true; btn.textContent = "合成中…";
+  try{
+    const r = await fetch("/api/preview", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({voice_id: voiceId, text})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const blob = await r.blob();
+    if(currentAudio) currentAudio.pause();
+    currentAudio = new Audio(URL.createObjectURL(blob));
+    currentAudio.play();
+  }catch(e){ alert("试听失败：" + e.message); }
+  finally{ btn.disabled = false; btn.textContent = "试听"; }
+}
+
+// ---------- 上传 ----------
+const fileInput = $("#file-input");
+fileInput.onchange = () => {
+  const f = fileInput.files[0];
+  $("#filebox").innerHTML = f ? `已选择：<strong>${f.name}</strong>` : "<strong>点击选择文件</strong>";
+};
+
+$("#upload-form").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const form = ev.target;
+  const msg = $("#upload-msg");
+  if(!fileInput.files[0]){ msg.className = "msg err"; msg.textContent = "请选择参考音频"; return; }
+  msg.className = "msg"; msg.textContent = "上传中…";
+  const fd = new FormData(form);
+  try{
+    const r = await fetch("/api/voices", {method:"POST", body: fd});
+    if(!r.ok) throw new Error(await r.text());
+    msg.className = "msg ok"; msg.textContent = "成功！已加入音色列表。";
+    form.reset();
+    $("#filebox").innerHTML = "<strong>点击选择文件</strong>，或把文件拖到这里（会自动转成 32k 单声道，截取前 10 秒）";
+    loadVoices();
+  }catch(e){
+    msg.className = "msg err"; msg.textContent = "失败：" + e.message;
+  }
+};
+
+// ---------- 对话 ----------
+$("#chat-btn").onclick = async () => {
+  const text = $("#chat-input").value.trim();
+  if(!text) return;
+  const btn = $("#chat-btn");
+  const bubble = $("#chat-reply");
+  const player = $("#player");
+  btn.disabled = true; btn.textContent = "思考中…";
+  bubble.style.display = "block"; bubble.textContent = "…";
+  try{
+    const r = await fetch("/api/chat", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    bubble.textContent = data.reply || "（没有回复）";
+    if(data.audio_b64){
+      const bytes = Uint8Array.from(atob(data.audio_b64), c => c.charCodeAt(0));
+      player.src = URL.createObjectURL(new Blob([bytes], {type:"audio/wav"}));
+      player.style.display = "block";
+      player.play();
+    }
+  }catch(e){
+    bubble.textContent = "失败：" + e.message;
+  }finally{
+    btn.disabled = false; btn.textContent = "发送";
+  }
+};
+
+$("#chat-input").addEventListener("keydown", e => { if(e.key === "Enter") $("#chat-btn").click(); });
+
+$("#copy-btn").onclick = async () => {
+  try{ await navigator.clipboard.writeText($("#ws-url").textContent);
+       $("#copy-btn").textContent = "已复制";
+       setTimeout(()=>$("#copy-btn").textContent = "复制", 1200);
+  }catch(e){}
+};
+
+// ---------- 知识库 ----------
+async function loadKb(){
+  const box = $("#kb-list");
+  try{
+    const r = await fetch("/api/kb");
+    const d = await r.json();
+    box.innerHTML = "";
+    if(!d.items.length){
+      box.innerHTML = '<div class="empty">知识库还是空的。</div>';
+      return;
+    }
+    for(const it of d.items){
+      const el = document.createElement("div");
+      el.className = "kb-item";
+      const h = document.createElement("h3");
+      h.textContent = it.title + (it.tags ? `  [${it.tags}]` : "");
+      const p = document.createElement("p");
+      p.textContent = it.snippet;
+      const row = document.createElement("div");
+      row.className = "row";
+      const del = document.createElement("button");
+      del.className = "act danger"; del.textContent = "删除";
+      del.onclick = async () => {
+        if(!confirm(`删除知识「${it.title}」？`)) return;
+        await fetch(`/api/kb/${encodeURIComponent(it.id)}`, {method:"DELETE"});
+        loadKb();
+      };
+      row.append(del);
+      el.append(h, p, row);
+      box.append(el);
+    }
+  }catch(e){
+    box.innerHTML = '<div class="empty">加载失败：' + e.message + '</div>';
+  }
+}
+
+$("#kb-add").onclick = async () => {
+  const title = $("#kb-title").value.trim();
+  const content = $("#kb-content").value.trim();
+  const tags = $("#kb-tags").value.trim();
+  const msg = $("#kb-msg");
+  if(!title || !content){ msg.className = "msg err"; msg.textContent = "标题和内容都要填"; return; }
+  msg.className = "msg"; msg.textContent = "保存中…";
+  try{
+    const r = await fetch("/api/kb", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({title, content, tags})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    msg.className = "msg ok"; msg.textContent = "已加入知识库";
+    $("#kb-title").value = ""; $("#kb-content").value = ""; $("#kb-tags").value = "";
+    loadKb();
+  }catch(e){
+    msg.className = "msg err"; msg.textContent = "失败：" + e.message;
+  }
+};
+
+// ---------- 知识库文档上传 ----------
+$("#kb-file").onchange = () => {
+  const f = $("#kb-file").files[0];
+  if (f) uploadKbFile(f);
+};
+
+function uploadKbFile(file){
+  const wrap = $("#kb-progress-wrap");
+  const bar = $("#kb-progress-bar");
+  const txt = $("#kb-progress-text");
+  const fd = new FormData();
+  fd.append("file", file);
+
+  wrap.style.display = "block";
+  bar.style.width = "2%";
+  txt.textContent = "上传中… " + file.name;
+
+  const xhr = new XMLHttpRequest();
+  xhr.upload.onprogress = (e) => {
+    if(!e.lengthComputable) return;
+    const pct = Math.round(e.loaded / e.total * 20);
+    bar.style.width = pct + "%";
+    txt.textContent = "上传中 " + Math.round(e.loaded / e.total * 100) + "%";
+  };
+  xhr.onload = () => {
+    if(xhr.status !== 200){
+      bar.style.width = "100%";
+      txt.textContent = "上传失败：" + (xhr.responseText || xhr.status);
+      $("#kb-file").value = "";
+      return;
+    }
+    let j;
+    try{ j = JSON.parse(xhr.responseText); }
+    catch(e){ txt.textContent = "返回解析失败"; return; }
+    pollKbJob(j.job_id, file.name);
+  };
+  xhr.onerror = () => {
+    bar.style.width = "100%";
+    txt.textContent = "上传失败：网络错误";
+    $("#kb-file").value = "";
+  };
+  xhr.open("POST", "/api/kb/upload");
+  xhr.send(fd);
+}
+
+async function pollKbJob(jobId, name){
+  const bar = $("#kb-progress-bar");
+  const txt = $("#kb-progress-text");
+  while(true){
+    await new Promise(r => setTimeout(r, 700));
+    try{
+      const r = await fetch("/api/kb/jobs/" + jobId);
+      if(!r.ok) throw new Error(await r.text());
+      const j = await r.json();
+      bar.style.width = (20 + Math.round(j.progress * 0.8)) + "%";
+      txt.textContent = (j.message || "解析中…") + "  " + j.progress + "%";
+      if(j.status === "done"){
+        bar.style.width = "100%";
+        txt.textContent = `添加成功：${name}，共 ${j.added} 段`;
+        $("#kb-file").value = "";
+        loadKb();
+        break;
+      }
+      if(j.status === "error"){
+        bar.style.width = "100%";
+        txt.textContent = "解析失败：" + j.message;
+        $("#kb-file").value = "";
+        break;
+      }
+    }catch(e){
+      txt.textContent = "查询进度失败：" + e.message;
+      break;
+    }
+  }
+}
+
+// ---------- 设备控制台 ----------
+let DEVICE = null;
+const STATE_NAMES = {0: "开机", 1: "待机", 2: "聆听", 3: "思考", 4: "说话", 5: "离线"};
+
+async function loadDevice(){
+  try{
+    const r = await fetch("/api/device");
+    const d = await r.json();
+    const el = $("#dev-info");
+    if(!d.devices || !d.devices.length){
+      DEVICE = null;
+      el.textContent = "未发现设备（检查设备是否连到 ws://电脑IP:8765/ws/device）";
+      return;
+    }
+    DEVICE = d.devices[0];
+    const st = DEVICE.status || {};
+    el.textContent = `● ${DEVICE.id} · 状态 ${STATE_NAMES[st.state] ?? "-"} · WiFi ${st.wifi ?? "-"}`;
+    if(document.activeElement !== $("#dev-vol")) $("#dev-vol").value = st.volume ?? 70;
+    if(document.activeElement !== $("#dev-bright")) $("#dev-bright").value = st.brightness ?? 70;
+    $("#dev-vol-val").textContent = st.volume != null ? st.volume + "%" : "";
+    $("#dev-bright-val").textContent = st.brightness != null ? st.brightness + "%" : "";
+  }catch(e){ /* 服务端没起好时忽略 */ }
+}
+
+async function devCmd(cmd, value, text){
+  if(!DEVICE){ alert("没有在线设备"); return; }
+  const body = {device_id: DEVICE.id, cmd};
+  if(value !== null && value !== undefined) body.value = value;
+  if(text !== null && text !== undefined) body.text = text;
+  try{
+    const r = await fetch("/api/device/command", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error(await r.text());
+    setTimeout(loadDevice, 600);
+  }catch(e){ alert("控制失败：" + e.message); }
+}
+
+const DEV_APPS = [["desktop","返回桌面"],["games","小游戏"],["2048","2048"],
+                  ["snake","贪吃蛇"],["note","记事本"],["settings","设置"],
+                  ["camera","相机"]];
+for(const [v, label] of DEV_APPS){
+  const b = document.createElement("button");
+  b.className = "act"; b.textContent = label;
+  b.onclick = () => devCmd("open_app", v);
+  $("#dev-apps").append(b);
+}
+{
+  const b = document.createElement("button");
+  b.className = "act"; b.textContent = "拍照";
+  b.onclick = () => devCmd("photo");
+  $("#dev-apps").append(b);
+}
+$("#dev-vol").onchange = () => devCmd("volume", +$("#dev-vol").value);
+$("#dev-bright").onchange = () => devCmd("brightness", +$("#dev-bright").value);
+$("#dev-text-btn").onclick = () => {
+  const t = $("#dev-text").value.trim();
+  if(t) devCmd("text", null, t);
+};
+$("#dev-note-btn").onclick = () => {
+  const t = $("#dev-note").value.trim();
+  if(t) devCmd("note_append", null, t);
+};
+$("#dev-say-btn").onclick = async () => {
+  const t = $("#dev-say").value.trim();
+  if(!t) return;
+  if(!DEVICE){ alert("没有在线设备"); return; }
+  try{
+    const r = await fetch("/api/device/say", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({device_id: DEVICE.id, text: t})
+    });
+    if(!r.ok) throw new Error(await r.text());
+  }catch(e){ alert("播放失败：" + e.message); }
+};
+$("#dev-reboot").onclick = () => {
+  if(confirm("确定重启设备？")) devCmd("reboot");
+};
+
+/* ---------------- 音乐 ---------------- */
+let MUSIC_LAST = {q:"", source:"auto", results:[]};
+
+function musicTime(sec){
+  sec = Math.max(0, Math.round(sec || 0));
+  return Math.floor(sec/60) + ":" + String(sec%60).padStart(2,"0");
+}
+
+function renderMusicResults(){
+  const box = $("#music-results");
+  box.innerHTML = "";
+  if(!MUSIC_LAST.results.length){
+    box.textContent = "没有找到。自己的歌放进 server/music 目录。";
+    return;
+  }
+  MUSIC_LAST.results.forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "chat";
+    row.style.marginTop = "6px";
+    const label = document.createElement("span");
+    label.style.flex = "1";
+    label.style.fontSize = "13px";
+    const dur = t.duration ? musicTime(t.duration) : "未知";
+    label.textContent = (i+1) + ". " + t.title + " — " + t.artist +
+      "（" + dur + " · " + t.source + "）";
+    const b = document.createElement("button");
+    b.className = "act primary";
+    b.textContent = "播放";
+    b.onclick = () => musicPlay(i + 1);
+    row.appendChild(label);
+    row.appendChild(b);
+    box.appendChild(row);
+  });
+}
+
+async function musicSearch(){
+  const q = $("#music-q").value.trim();
+  if(!q) return;
+  const source = $("#music-source").value;
+  $("#music-results").textContent = "搜索中…";
+  try{
+    const r = await fetch("/api/music/search?q=" + encodeURIComponent(q) +
+                          "&source=" + encodeURIComponent(source));
+    const d = await r.json();
+    MUSIC_LAST = {q, source, results: d.results || []};
+    renderMusicResults();
+  }catch(e){ $("#music-results").textContent = "搜索失败：" + e.message; }
+}
+
+async function musicPlay(index){
+  if(!DEVICE){ alert("没有在线设备"); return; }
+  try{
+    const r = await fetch("/api/music/play", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({device_id:DEVICE.id, query:MUSIC_LAST.q,
+                            source:MUSIC_LAST.source, index})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    $("#music-status").textContent = "正在缓存/打开音乐…";
+    setTimeout(loadMusicStatus, 800);
+  }catch(e){ alert("播放失败：" + e.message); }
+}
+
+async function musicCtrl(action){
+  if(!DEVICE){ alert("没有在线设备"); return; }
+  try{
+    const r = await fetch("/api/music/control", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({device_id:DEVICE.id, action})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    setTimeout(loadMusicStatus, 400);
+  }catch(e){ alert("控制失败：" + e.message); }
+}
+
+async function loadMusicStatus(){
+  if(!DEVICE) return;
+  try{
+    const r = await fetch("/api/music/status");
+    if(!r.ok) return;
+    const d = await r.json();
+    let s = d.status || "未播放";
+    if(d.state && d.state !== "stopped" && d.duration > 0){
+      s += " · " + musicTime(d.position) + " / " + musicTime(d.duration);
+    }
+    $("#music-status").textContent = s;
+  }catch(e){ /* ignore */ }
+}
+
+$("#music-search-btn").onclick = musicSearch;
+$("#music-q").addEventListener("keydown", e => { if(e.key === "Enter") musicSearch(); });
+document.querySelectorAll("[data-music]").forEach(b => {
+  b.onclick = () => musicCtrl(b.dataset.music);
+});
+
+loadHealth();
+loadVoices();
+loadKb();
+loadDevice();
+loadMusicStatus();
+setInterval(loadHealth, 15000);
+setInterval(loadDevice, 3000);
+setInterval(loadMusicStatus, 3000);
+</script>
+</body>
+</html>
