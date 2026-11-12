@@ -351,7 +351,8 @@ class DeviceSession:
                                   "message": "本地曲库为空，请把音乐放进 server/music"})
             return
         self.playlist = items
-        await self.music.play(items[0], playlist=items, index=0)
+        await self.music.play(items[0], playlist=items, index=0,
+                              auto_next=music_mod.auto_next_enabled())
 
     async def local_step(self, delta: int):
         items = music_mod.local_tracks()
@@ -368,7 +369,8 @@ class DeviceSession:
                     idx = i
                     break
         idx = max(0, min(len(items) - 1, idx + delta))
-        await self.music.play(items[idx], playlist=items, index=idx)
+        await self.music.play(items[idx], playlist=items, index=idx,
+                              auto_next=music_mod.auto_next_enabled())
 
     async def _music_prepare(self, query=None, index=None, source="auto"):
         query = (query or "").strip()

@@ -123,6 +123,12 @@ music:
   cache_dir: "music/cache"
   ccmixter: true
   ffmpeg: ""
+  # 设备点“播放”时的本地曲库顺序：先按歌名匹配，剩下的按歌名排序
+  play_order:
+    - "Sugar"
+    - "Baby"
+  # 本地曲库一首结束后自动下一首
+  auto_next: true
 
 # ---------------- 音频处理 ----------------
 audio:

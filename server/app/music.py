@@ -228,12 +228,69 @@ async def search_music(query: str, source: str = "auto", limit: int = None):
     return uniq[:limit]
 
 
+def _play_order_keys():
+    raw = _cfg().get("play_order") or []
+    if isinstance(raw, str):
+        raw = [raw]
+    return [str(x).strip().lower() for x in raw if str(x).strip()]
+
+
+def _track_key_text(track: dict) -> str:
+    uri = track.get("uri") or ""
+    base = os.path.basename(uri)
+    stem = os.path.splitext(base)[0]
+    return " ".join([
+        track.get("title") or "",
+        track.get("artist") or "",
+        stem,
+        base,
+    ]).lower()
+
+
 def local_tracks():
-    """本地曲库（按歌名/作者排序），用于设备端“播放/上一首/下一首”。"""
+    """本地曲库，用于设备端“播放/上一首/下一首”。
+
+    先按 music.play_order 里列出的歌名匹配（Sugar、Baby...），
+    剩下的再按歌名/作者排序。
+    """
     items = list(_local_items())
     items.sort(key=lambda t: ((t.get("title") or "").lower(),
                               (t.get("artist") or "").lower()))
-    return items
+    order = _play_order_keys()
+    if not order:
+        return items
+
+    picked = []
+    used = set()
+    for key in order:
+        match = None
+        # 先精确匹配歌名或文件名（不含扩展名），避免 "Baby" 误匹配别的歌
+        for t in items:
+            if t["id"] in used:
+                continue
+            title = (t.get("title") or "").lower()
+            stem = os.path.splitext(os.path.basename(t.get("uri") or ""))[0].lower()
+            if key == title or key == stem:
+                match = t
+                break
+        if match is None:
+            for t in items:
+                if t["id"] in used:
+                    continue
+                if key in _track_key_text(t):
+                    match = t
+                    break
+        if match is not None:
+            picked.append(match)
+            used.add(match["id"])
+
+    picked.extend(t for t in items if t["id"] not in used)
+    return picked
+
+
+def auto_next_enabled() -> bool:
+    """设备本地曲库是否一首结束后自动下一首。"""
+    return bool(_cfg().get("auto_next", True))
 
 
 def format_results(results, query: str) -> str:
@@ -305,6 +362,8 @@ class MusicPlayer:
         self._paused = asyncio.Event()
         self._paused.set()
         self._rebase = True
+        self._auto_next = False
+        self._auto_pending = False
 
     def status_text(self) -> str:
         if not self.cur:
@@ -314,9 +373,11 @@ class MusicPlayer:
             state, self.cur.get("title", ""), self.cur.get("artist", ""),
             fmt_seconds(self.position), fmt_seconds(self.duration))
 
-    async def play(self, track: dict, playlist=None, index=None):
+    async def play(self, track: dict, playlist=None, index=None, auto_next=False):
         async with self.lock:
             await self._stop_locked(notify=False)
+            self._auto_next = bool(auto_next)
+            self._auto_pending = False
             if playlist is not None:
                 self.list = list(playlist)
             if index is not None:
@@ -426,13 +487,18 @@ class MusicPlayer:
             self.proc = None
             if self.s.closed:
                 return
-            if rc != 0 and sent <= 0:
+            ok_end = not (rc != 0 and sent <= 0)
+            if not ok_end:
                 await self.s.send_json({
                     "type": "music_error",
                     "message": "播放失败，文件可能损坏"})
             else:
                 await self.s.send_json({"type": "music_end"})
             self.state = "stopped"
+            if (ok_end and self._auto_next and self.list
+                    and self.idx + 1 < len(self.list) and not self.s.closed):
+                self._auto_pending = True
+                asyncio.get_running_loop().call_later(0.6, self._auto_advance)
         except asyncio.CancelledError:
             raise
         except Exception as e:
@@ -449,8 +515,21 @@ class MusicPlayer:
                 except Exception:
                     pass
 
+    def _auto_advance(self):
+        if not self._auto_pending:
+            return
+        self._auto_pending = False
+        if self.s.closed or not self._auto_next:
+            return
+        nxt = self.idx + 1
+        if not self.list or nxt >= len(self.list):
+            return
+        asyncio.get_running_loop().create_task(
+            self.play(self.list[nxt], playlist=self.list, index=nxt, auto_next=True))
+
     async def _stop_locked(self, notify=True):
         self._paused.set()
+        self._auto_pending = False
         task, self.task = self.task, None
         if task and not task.done():
             task.cancel()
@@ -499,12 +578,14 @@ class MusicPlayer:
         idx = self.idx + 1
         if idx >= len(self.list):
             return "已经是最后一首了"
-        await self.play(self.list[idx], playlist=self.list, index=idx)
+        await self.play(self.list[idx], playlist=self.list, index=idx,
+                        auto_next=self._auto_next)
         return "下一首：" + self.list[idx].get("title", "")
 
     async def prev(self):
         if not self.list:
             return "当前没有播放列表"
         idx = max(0, self.idx - 1)
-        await self.play(self.list[idx], playlist=self.list, index=idx)
+        await self.play(self.list[idx], playlist=self.list, index=idx,
+                        auto_next=self._auto_next)
         return "上一首：" + self.list[idx].get("title", "")
