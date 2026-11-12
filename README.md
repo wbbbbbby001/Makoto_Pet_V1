@@ -84,6 +84,19 @@ setx MAKOTO_LLM_KEY "sk-..."
 - `server/.venv`、`server/music`、`server/config.yaml`、`server/data/voices.json` 等本地/版权内容
 - 固件 `build/`、`build_out/`、`managed_components/` 构建产物
 
+### 直接把整个文件夹拷给别人
+
+可以，但建议先做三件事：
+
+1. 删掉 / 清空 `server\config.yaml`（里面有你的大模型 Key），让对方复制
+   `config.example.yaml` 后填自己的；
+2. 删掉 `server\music\`（版权歌曲，且体积大）；
+3. 保持 `makoto-pet` 和 `makoto`（或 `GPT-SoVITS`）同级，不要只拷 `makoto-pet`。
+
+`server\.venv` 可以一起拷：`run.bat` 会检测它在对方电脑是否可用，不可用会自动删除重建
+（对方需要装 Python 3.10+，首次会联网装依赖）。
+`server\data\voices.json` 现在存的是相对路径，拷走后会自动迁移，不需要手改。
+
 > **版权提醒**：本仓库包含《Free!》橘真琴、《蜡笔小新》图片、微软雅黑字体位图、
 > 以及用角色声音训练的音色权重，仅限个人学习使用，请勿公开分发或商用。
 > 如果要转为公开仓库，请先替换这些素材。

@@ -7,13 +7,25 @@ import threading
 import time
 import uuid
 
-from .config import CFG, resolve
+from .config import CFG, ROOT, resolve
 
 
 def _slug(text: str) -> str:
     text = (text or "").strip().lower()
     text = re.sub(r"[^\w一-鿿-]+", "-", text)
     return text.strip("-")[:32] or "voice"
+
+
+def _store_path(path: str) -> str:
+    """把路径存成相对 server/ 的形式，方便整个目录拷到别的电脑。"""
+    if not path:
+        return ""
+    absolute = resolve(path)
+    try:
+        rel = os.path.relpath(absolute, ROOT)
+    except ValueError:
+        return absolute
+    return rel.replace(os.sep, "/")
 
 
 class VoiceStore:
@@ -37,9 +49,9 @@ class VoiceStore:
             builtin = (self.cfg.get("tts") or {}).get("builtin_voices") or []
             for v in builtin:
                 item = dict(v)
-                item["ref_audio"] = resolve(item.get("ref_audio", ""))
-                item["gpt_weights"] = resolve(item.get("gpt_weights", "")) if item.get("gpt_weights") else ""
-                item["sovits_weights"] = resolve(item.get("sovits_weights", "")) if item.get("sovits_weights") else ""
+                item["ref_audio"] = _store_path(item.get("ref_audio", ""))
+                item["gpt_weights"] = _store_path(item.get("gpt_weights", "")) if item.get("gpt_weights") else ""
+                item["sovits_weights"] = _store_path(item.get("sovits_weights", "")) if item.get("sovits_weights") else ""
                 item.setdefault("speed", 1.0)
                 item.setdefault("top_k", 15)
                 item.setdefault("top_p", 1.0)
@@ -49,12 +61,13 @@ class VoiceStore:
             data["default"] = (self.cfg.get("tts") or {}).get("default_voice") or (
                 data["voices"][0]["id"] if data["voices"] else "")
 
+        # 迁移旧数据：把绝对路径转换成相对 server/ 的路径
         for v in data.get("voices", []):
-            v["ref_audio"] = resolve(v.get("ref_audio", ""))
+            v["ref_audio"] = _store_path(v.get("ref_audio", ""))
             if v.get("gpt_weights"):
-                v["gpt_weights"] = resolve(v["gpt_weights"])
+                v["gpt_weights"] = _store_path(v["gpt_weights"])
             if v.get("sovits_weights"):
-                v["sovits_weights"] = resolve(v["sovits_weights"])
+                v["sovits_weights"] = _store_path(v["sovits_weights"])
 
         if not data.get("default") and data.get("voices"):
             data["default"] = data["voices"][0]["id"]
@@ -71,6 +84,14 @@ class VoiceStore:
 
     def _save(self):
         self._save_raw(self.data)
+
+    def _runtime_view(self, voice: dict) -> dict:
+        """返回绝对路径副本给 TTS 用；存储本身保持相对路径。"""
+        item = dict(voice)
+        for key in ("ref_audio", "gpt_weights", "sovits_weights"):
+            if item.get(key):
+                item[key] = resolve(item[key])
+        return item
 
     # ---------------- 对外 ----------------
     @property
@@ -93,8 +114,8 @@ class VoiceStore:
         voice_id = voice_id or self.default_id
         for v in self.all():
             if v["id"] == voice_id:
-                return v
-        return self.all()[0]
+                return self._runtime_view(v)
+        return self._runtime_view(self.all()[0])
 
     def find(self, key: str):
         if not key:
@@ -102,10 +123,10 @@ class VoiceStore:
         key_l = key.strip().lower()
         for v in self.all():
             if v["id"].lower() == key_l or v["name"].lower() == key_l:
-                return v
+                return self._runtime_view(v)
         for v in self.all():
             if key_l in v["name"].lower() or key_l in v["id"].lower():
-                return v
+                return self._runtime_view(v)
         return None
 
     def set_default(self, voice_id: str) -> bool:
@@ -128,12 +149,12 @@ class VoiceStore:
             item = {
                 "id": vid,
                 "name": name,
-                "ref_audio": os.path.abspath(ref_audio),
+                "ref_audio": _store_path(ref_audio),
                 "prompt_text": prompt_text,
                 "prompt_lang": prompt_lang,
                 "text_lang": text_lang,
-                "gpt_weights": os.path.abspath(gpt_weights) if gpt_weights else "",
-                "sovits_weights": os.path.abspath(sovits_weights) if sovits_weights else "",
+                "gpt_weights": _store_path(gpt_weights) if gpt_weights else "",
+                "sovits_weights": _store_path(sovits_weights) if sovits_weights else "",
                 "speed": float(speed),
                 "top_k": 15,
                 "top_p": 1.0,

@@ -22,6 +22,9 @@ if not exist "runtime\python.exe" (
   exit /b 1
 )
 
+rem GPT-SoVITS loads reference audio through ffmpeg by name.
+rem Its folder ships ffmpeg.exe / ffprobe.exe, so put it on PATH.
+set "PATH=%CD%;%PATH%"
 set "NO_PROXY=localhost,127.0.0.1,::1"
 set "no_proxy=localhost,127.0.0.1,::1"
 echo Starting GPT-SoVITS API on http://127.0.0.1:9880

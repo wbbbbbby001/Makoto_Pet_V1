@@ -126,6 +126,6 @@ music:
 
 # ---------------- 音频处理 ----------------
 audio:
-  # 留空 = 从 PATH 找 ffmpeg；Windows 可指向 GPT-SoVITS 自带的 ffmpeg.exe
-  ffmpeg: ""
+  # Windows 直接用 GPT-SoVITS 自带的 ffmpeg.exe；也可以留空从 PATH 找
+  ffmpeg: "../../GPT-SoVITS/ffmpeg.exe"
   ref_max_seconds: 10
