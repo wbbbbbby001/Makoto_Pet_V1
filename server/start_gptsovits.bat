@@ -16,8 +16,8 @@ if not exist "runtime\python.exe" (
   echo   %CD%
   echo.
   echo Install GPT-SoVITS first, then either:
-  echo   1) put it next to this repo as "GPT-SoVITS", or
-  echo   2) set GPT_SOVITS_DIR to its folder.
+  echo   1. put it next to this repo as "GPT-SoVITS", or
+  echo   2. set GPT_SOVITS_DIR to its folder.
   pause
   exit /b 1
 )
