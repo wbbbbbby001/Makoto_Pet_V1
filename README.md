@@ -115,4 +115,4 @@ powershell -ExecutionPolicy Bypass -File "makoto-pet\firmware\build.ps1" -Flash 
 
 
 # 这个桌宠当然是给我好朋友陈婉儿定制的😋
-（家人们，有了这次开发经验，我能赚钱养我的扳手与诗战队吗😋）
+诶好像做这种定制桌宠也蛮不戳的，好那么好，家人们，有了这次开发经验，我能赚钱养我的扳手与诗战队吗😋
