@@ -111,3 +111,8 @@ powershell -ExecutionPolicy Bypass -File "makoto-pet\firmware\build.ps1" -Flash 
 - `makoto-pet/README.md` —— 语音中枢、音色管理、固件协议完整说明
 - `makoto/使用说明.md` —— GPT-SoVITS 推理参数、参考音频选择与常见坑
 - `00-项目总说明.md` —— 目录整理过程与本地路径约定
+
+
+
+# 这个桌宠当然是给我好朋友陈婉儿定制的😋
+（家人们，有了这次开发经验，我能赚钱养我的扳手与诗战队吗😋）
