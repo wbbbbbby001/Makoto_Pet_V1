@@ -1,0 +1,45 @@
+# ============================================================
+# 大文件与本地环境（不随仓库分发）
+# ============================================================
+
+# GPT-SoVITS 第三方框架 + 便携 Python runtime（约 14 GB）
+makoto/GPT-SoVITS/
+
+# Makoto 训练权重（单文件超过 GitHub 100 MB 限制）
+makoto/GPT_weights_v2/
+makoto/SoVITS_weights_v2/
+makoto/SoVITS_weights_v3/
+*.ckpt
+*.pth
+
+# 音色模型打包（约 212 MB）
+makoto-pet/release/voice_models_makoto.zip
+
+# Python 虚拟环境与缓存
+makoto-pet/server/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 本地配置与个人数据
+makoto-pet/server/config.yaml
+makoto-pet/server/data/voices.json
+makoto-pet/server/data/knowledge.json
+makoto-pet/server/data/pinyin_dict.pkl
+makoto-pet/server/data/*.wav
+makoto-pet/server/data/*.pcm
+makoto-pet/server/data/kb_uploads/*
+makoto-pet/server/data/refs/*
+makoto-pet/server/music/*
+
+# ESP-IDF 构建产物
+makoto-pet/firmware/build/
+makoto-pet/firmware/build_out/
+makoto-pet/firmware/managed_components/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
